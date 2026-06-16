@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盲人盲道事件舆情分析报告</title>
+    <!-- 引入ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- 引入词云库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* 全局配色变量 */
+        :root {
+            --light-blue: #E6F2FF;
+            --sky-blue: #87CEEB;
+            --deep-blue: #2E5EAA;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --warn-red: #E53E3E;
+            --card-shadow: 0 4px 12px rgba(46, 94, 170, 0.1);
+        }
+
+        body {
+            background-color: #f9fcff;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* 顶部固定导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(to right, var(--light-blue), var(--sky-blue));
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            justify-content: space-between;
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--deep-blue);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 16px;
+            padding: 8px 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .nav-menu a.active,
+        .nav-menu a:hover {
+            color: var(--deep-blue);
+            font-weight: bold;
+        }
+
+        .nav-menu a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--deep-blue);
+        }
+
+        /* 页面容器 */
+        .container {
+            max-width: 1200px;
+            margin: 80px auto 40px;
+            padding: 0 20px;
+        }
+
+        /* Banner区域 */
+        .banner {
+            background-color: var(--light-blue);
+            padding: 60px 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 1.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .banner h1 {
+            font-size: 28px;
+            color: var(--deep-blue);
+            margin-bottom: 15px;
+        }
+
+        .banner p {
+            font-size: 16px;
+            color: var(--text-gray);
+        }
+
+        /* 通用板块样式 */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: var(--deep-blue);
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--sky-blue);
+            display: inline-block;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background-color: var(--light-blue);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(46, 94, 170, 0.15);
+        }
+
+        .card p {
+            margin-bottom: 15px;
+            text-indent: 2em;
+            font-size: 15px;
+        }
+
+        /* 图表容器 */
+        .chart-box {
+            width: 100%;
+            height: 400px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        /* 高亮文字 */
+        .highlight {
+            color: var(--deep-blue);
+            font-weight: bold;
+        }
+
+        /* 核心结论特殊卡片 */
+        .conclusion-card {
+            background-color: #d1e7ff;
+            border-left: 5px solid var(--deep-blue);
+        }
+
+        .conclusion-card li {
+            margin-bottom: 12px;
+            margin-left: 20px;
+            font-size: 15px;
+        }
+
+        /* 网格布局 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        /* 页脚 */
+        .footer {
+            background-color: var(--light-blue);
+            text-align: center;
+            padding: 25px 20px;
+            color: var(--text-gray);
+            margin-top: 60px;
+            border-top: 1px solid var(--sky-blue);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 992px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+        <div class="nav-title">盲人盲道事件舆情分析报告</div>
+        <div class="nav-menu">
+            <a href="#overview" class="active">舆情概述</a>
+            <a href="#data">量化数据分析</a>
+            <a href="#analysis">舆情深度解读</a>
+            <a href="#conclusion">核心结论</a>
+        </div>
+    </div>
+
+    <!-- 页面主体容器 -->
+    <div class="container">
+        <!-- Banner区域 -->
+        <div class="banner">
+            <h1>2026年5月盲人女孩盲道被撞事件舆情专题报告</h1>
+            <p>舆情反转 | 流量乱象 | 社会信任分析</p>
+        </div>
+
+        <!-- 模块1：舆情概述 -->
+        <section class="section" id="overview">
+            <h2 class="section-title">舆情概述</h2>
+            <div class="card">
+                <h3 style="color:var(--deep-blue); margin-bottom:10px;">一、事件经过</h3>
+                <p>2026年5月7日，网络上出现“盲人女孩在盲道被撞倒”的相关视频与图文内容，发布者声称盲人女孩正常行走在盲道时被恶意撞倒，引发全网强烈关注。</p>
+                <p>事件初期，网民纷纷同情受害者，谴责涉事人员，相关话题迅速登上各大平台热搜榜，舆论情绪呈现一边倒态势。</p>
+                <p>5月9日，该事件达到第一个舆情高峰，信息量突破7万条。随后官方介入调查，经核实确认，该事件为**虚假摆拍**，目的为博取流量、制造对立。</p>
+                <p>5月16日，官方通报发布后，事件迎来第二个舆情高峰，信息量远超第一次，全网舆论彻底反转，从同情转为愤怒与反思。</p>
+                
+                <h3 style="color:var(--deep-blue); margin:20px 0 10px;">二、舆情发展</h3>
+                <p>本次舆情呈现典型的**双峰反转走势**，从初期的同情声讨，到真相曝光后的愤怒批判，完整展现了虚假舆情从发酵、爆发到反转、反思的全过程。</p>
+                <p>事件不仅引发了对摆拍者的谴责，更触发了公众对网络流量乱象、社会信任危机、善意被透支等深层问题的广泛讨论。</p>
+            </div>
+        </section>
+
+        <!-- 模块2：量化数据分析 -->
+        <section class="section" id="data">
+            <h2 class="section-title">量化数据分析</h2>
+            
+            <!-- 图表1：舆情传播走势 -->
+            <div class="card">
+                <h3 class="highlight">1. 舆情传播走势分析</h3>
+                <div id="trendChart" class="chart-box"></div>
+                <p style="color:var(--text-gray);">数据周期：5月7日-5月19日 | 核心峰值：5月9日(7.38万条)、5月16日(19.65万条)</p>
+            </div>
+
+            <!-- 图表2+3：双列布局 -->
+            <div class="grid">
+                <div class="card">
+                    <h3 class="highlight">2. 传播渠道占比分析</h3>
+                    <div id="channelChart" class="chart-box"></div>
+                </div>
+                <div class="card">
+                    <h3 class="highlight">3. 媒体级别报道分布</h3>
+                    <div id="mediaChart" class="chart-box"></div>
+                    <p style="margin-top:10px; color:var(--text-gray);">省级媒体成为传播主力，央级媒体权威定调，形成完整传播矩阵</p>
+                </div>
+            </div>
+
+            <!-- 图表4：网民观点 + 词云 -->
+            <div class="grid">
+                <div class="card">
+                    <h3 class="highlight">4. 反转后网民观点占比</h3>
+                    <div id="opinionChart" class="chart-box"></div>
+                </div>
+                <div class="card">
+                    <h3 class="highlight">5. 舆情高频关键词云</h3>
+                    <div id="wordCloudChart" class="chart-box"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 模块3：舆情深度解读 -->
+        <section class="section" id="analysis">
+            <h2 class="section-title">舆情深度解读</h2>
+            
+            <div class="card">
+                <h3 class="highlight">一、影响层面分析</h3>
+                <p>此次虚假摆拍事件对社会信任体系造成严重冲击，<span class="highlight">公众善意被恶意透支</span>，让真正需要帮助的弱势群体面临信任危机。</p>
+                <p>网络平台流量算法助推虚假内容快速传播，低俗流量追求凌驾于社会公序良俗之上，破坏网络生态环境。</p>
+            </div>
+
+            <div class="card">
+                <h3 class="highlight">二、网民情绪演变规律</h3>
+                <p>事件初期：同情、愤怒、声讨（负面情绪占比90%以上）；</p>
+                <p>真相曝光期：质疑、观望、求证；</p>
+                <p>通报发布后：愤怒、失望、反思，情绪从针对个体转向批判行业乱象。</p>
+            </div>
+
+            <div class="card">
+                <h3 class="highlight">三、沉默螺旋现象解读</h3>
+                <p>事件发酵初期，质疑声音被大量同情言论淹没，形成沉默螺旋效应；真相曝光后，舆论场迅速反转，理性声音成为主流。</p>
+                <p>这一现象反映出网民在热点事件中易受情绪驱动，缺乏独立求证意识。</p>
+            </div>
+
+            <div class="card">
+                <h3 class="highlight">四、同类事件对比与社会伤害</h3>
+                <p>近年来多起虚假摆拍舆情事件，持续加剧<span class="highlight">狼来了效应</span>，让公众对网络求助信息产生戒备心理。</p>
+                <p>长期来看，此类行为会瓦解社会互助基础，降低社会整体信任度，造成难以修复的公共信任伤害。</p>
+            </div>
+        </section>
+
+        <!-- 模块4：核心结论 -->
+        <section class="section" id="conclusion">
+            <h2 class="section-title">核心结论</h2>
+            <div class="card conclusion-card">
+                <ul>
+                    <li>本次事件是典型的<span class="highlight">流量驱动型虚假摆拍舆情</span>，呈现双峰传播特征，反转后舆情影响力远超初期。</li>
+                    <li>视频平台与微博是主要传播阵地，省级媒体承担主要传播职责，央级媒体负责权威辟谣与定调。</li>
+                    <li>事件核心危害在于<span class="highlight">透支社会善意、破坏信任体系</span>，需加强平台监管、法律约束与网民媒介素养教育，遏制虚假摆拍乱象。</li>
+                </ul>
+                <p style="margin-top:20px; text-align:center; color:var(--deep-blue);">
+                    守护网络真实性，就是守护社会的善意与信任
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+        舆情报告可视化页面 | 数据来源：2026年5月全网舆情监测
+    </div>
+
+    <script>
+        // 导航栏滚动高亮功能
+        const sections = document.querySelectorAll('.section');
+        const navLinks = document.querySelectorAll('.nav-menu a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // 初始化所有ECharts图表
+        window.onload = function() {
+            // 1. 舆情传播走势图表
+            const trendChart = echarts.init(document.getElementById('trendChart'));
+            const trendOption = {
+                title: { text: '5.7-5.19舆情信息量走势', left: 'center', textStyle: {color: '#2E5EAA'} },
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: ['5.7','5.8','5.9','5.10','5.11','5.12','5.13','5.14','5.15','5.16','5.17','5.18','5.19']
+                },
+                yAxis: { type: 'value', name: '信息量(万条)' },
+                series: [
+                    {
+                        name: '信息量',
+                        type: 'bar',
+                        itemStyle: { color: '#87CEEB' },
+                        data: [1.25,3.42,7.38,4.11,2.35,1.86,2.03,2.77,5.49,19.65,12.33,6.78,3.21],
+                        animationDuration: 2000
+                    },
+                    {
+                        name: '趋势线',
+                        type: 'line',
+                        itemStyle: { color: '#2E5EAA' },
+                        lineStyle: { width: 3 },
+                        data: [1.25,3.42,7.38,4.11,2.35,1.86,2.03,2.77,5.49,19.65,12.33,6.78,3.21],
+                        markPoint: {
+                            data: [
+                                { type: 'max', name: '峰值', itemStyle: {color: '#E53E3E'} },
+                                { coord: [2,7.38], name: '峰值', itemStyle: {color: '#E53E3E'} }
+                            ]
+                        }
+                    }
+                ]
+            };
+            trendChart.setOption(trendOption);
+
+            // 2. 传播渠道环形饼图
+            const channelChart = echarts.init(document.getElementById('channelChart'));
+            const channelOption = {
+                title: { text: '传播渠道占比', left: 'center', textStyle: {color: '#2E5EAA'} },
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    name: '渠道占比',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    data: [
+                        { value: 41.2, name: '视频平台' },
+                        { value: 33.5, name: '微博' },
+                        { value: 18.7, name: '新闻网站' },
+                        { value: 4.3, name: '微信公众号' },
+                        { value: 2.3, name: '论坛/知乎' }
+                    ],
+                    color: ['#87CEEB','#64B5F6','#42A5F5','#1E88E5','#1565C0'],
+                    animationDuration: 2000
+                }]
+            };
+            channelChart.setOption(channelOption);
+
+            // 3. 媒体级别柱状图
+            const mediaChart = echarts.init(document.getElementById('mediaChart'));
+            const mediaOption = {
+                title: { text: '媒体报道数量', left: 'center', textStyle: {color: '#2E5EAA'} },
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: ['省级媒体','央级媒体','市级/其他媒体'] },
+                yAxis: { type: 'value', name: '报道篇数' },
+                series: [{
+                    type: 'bar',
+                    itemStyle: { color: '#87CEEB' },
+                    data: [9752, 1896, 3400],
+                    animationDuration: 2000
+                }]
+            };
+            mediaChart.setOption(mediaOption);
+
+            // 4. 网民观点饼图
+            const opinionChart = echarts.init(document.getElementById('opinionChart'));
+            const opinionOption = {
+                title: { text: '网民观点分布', left: 'center', textStyle: {color: '#2E5EAA'} },
+                tooltip: { trigger: 'item' },
+                series: [{
+                    name: '观点占比',
+                    type: 'pie',
+                    data: [
+                        { value: 45.8, name: '谴责惩处' },
+                        { value: 29.8, name: '寒心信任危机' },
+                        { value: 24.4, name: '理性反思' }
+                    ],
+                    color: ['#87CEEB','#64B5F6','#42A5F5'],
+                    animationDuration: 2000
+                }]
+            };
+            opinionChart.setOption(opinionOption);
+
+            // 5. 高频关键词云
+            const wordCloudChart = echarts.init(document.getElementById('wordCloudChart'));
+            const wordCloudOption = {
+                tooltip: {},
+                series: [{
+                    type: 'wordCloud',
+                    gridSize: 8,
+                    sizeRange: [12, 50],
+                    rotationRange: [0, 0],
+                    shape: 'circle',
+                    width: '100%',
+                    height: '100%',
+                    textStyle: {
+                        color: function () {
+                            return 'rgb(' + Math.round(Math.random() * 30 + 30) + ', ' + Math.round(Math.random() * 100 + 100) + ', ' + Math.round(Math.random() * 150 + 150) + ')';
+                        }
+                    },
+                    data: [
+                        { name: '摆拍', value: 100 },
+                        { name: '盲道', value: 90 },
+                        { name: '流量', value: 85 },
+                        { name: '盲人', value: 80 },
+                        { name: '虚假', value: 75 },
+                        { name: '信任危机', value: 70 },
+                        { name: '善意透支', value: 65 },
+                        { name: '狼来了', value: 60 },
+                        { name: '反转', value: 55 },
+                        { name: '辟谣', value: 50 }
+                    ]
+                }]
+            };
+            wordCloudChart.setOption(wordCloudOption);
+
+            // 窗口大小变化时自适应图表
+            window.addEventListener('resize', () => {
+                trendChart.resize();
+                channelChart.resize();
+                mediaChart.resize();
+                opinionChart.resize();
+                wordCloudChart.resize();
+            });
+        };
+    </script>
+</body>
+</html>
